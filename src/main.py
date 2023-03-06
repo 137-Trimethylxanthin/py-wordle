@@ -27,22 +27,36 @@ def choose_word() -> list:
     return l
 
 
-global old_guess1
-global old_guess2
-global old_guess3
-global old_guess4
-global old_guess5
-global old_guess6
-global search_word
+global old_guess1 # the old guesses
+global old_guess2 # the old guesses
+global old_guess3 # the old guesses
+global old_guess4 # the old guesses
+global old_guess5 # the old guesses
+global old_guess6 # the old guesses
+global search_word # the word that the player has to guess
 search_word = choose_word()
 
+for i in range(5):
+    search_word[i] = search_word[i].lower()
 
-def decode_key(k: str) -> str:
-    if k == b'\x08':
-        k = ""
+def decode_key(key: bytes) -> str:
+    #ignore arrow keys
+    if key == b'\x08':
+        o = ""
+    elif key == b'\x1b[3~':
+        o = ""
+    elif key == b'\r':
+        o = "enter"
+    elif key == b'\t':
+        o = "tab"
+    elif key == b'\x1b':
+        o = "esc"
     else:
-        k = str(k, "utf-8")
-    return k
+        try:
+            o = str(key, "utf-8").lower()
+        except UnicodeDecodeError:
+            o = "pass"
+    return o
 
 
 def key_press_detection():
@@ -56,7 +70,7 @@ def key_press_detection():
             k = "tab"
         if k == "\x1b":
             k = "esc"
-    return k
+    return k.lower()
 
 
 def clear():
@@ -108,15 +122,16 @@ def compare_word(guess: list) -> list:
         w.append(search_word[i])
 
     o: list = [str(), str(), str(), str(), str()]
+
     for i in range(5):
-        if w[i] == g[i]:
-            o[i] += str(color(1))
-            w[i] = "_"
+        if g[i] == w[i]:
+            o[i] = color(1)
+            w[i] = " "
         elif g[i] in w:
-            o[i] += str(color(2))
-            w[w.index(g[i])] = "_"
+            o[i] = color(4)
+            w[w.index(g[i])] = " "
         else:
-            o[i] += str(color(3))
+            o[i] = color(9)
 
     return o
 
@@ -125,13 +140,23 @@ def color(case: int) -> str:
     if case == 1:
         return "\033[32m"  # green
     elif case == 2:
-        return "\033[33m"  # yellow
+        return "\033[33m" # yellow
     elif case == 3:
         return "\033[37m"  # white
     elif case == 4:
         return "\033[31m"  # red
     elif case == 5:
         return "\033[0m"  # reset
+    elif case == 6:
+        return "\033[34m" # blue
+    elif case == 7:
+        return "\033[35m" # purple
+    elif case == 8:
+        return "\033[36m" # cyan
+    elif case == 9:
+        return "\033[90m" # grey
+
+
 
 
 def word(word: str, colo:list) -> str:
@@ -226,7 +251,7 @@ def draw(l: list, g: list, turn: int) -> None:
 
 
     clear()
-    print(" " * (tc_size // 2 - 14) + "Py Wordle v0.3")
+    print(" " * (tc_size // 2 - 14) + "Py Wordle v1.0")
     print()
     print()
     if turn > 1:
@@ -304,7 +329,9 @@ def guessing(turn: int, guess: list) -> list:
     while i_will_die:
         k = key_press_detection()
         print(k, "done writing", count)
-        if k == "" and 0 < count != (turn - 1) * 5:
+        if k == "pass":
+            pass
+        elif k == "" and 0 < count != (turn - 1) * 5:
             count -= 1
             guess[count] = " "
         elif k == "" and count == (turn - 1) * 5:
